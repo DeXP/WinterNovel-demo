@@ -30,7 +30,7 @@ body {
 .a{color:#000}.b{color:#c33}.c{color:#383}.d{color:#bb1}.e{color:#009}.f{color:#a04488}.g{color:#1cb1b6}.h{color:#ccc}.i{color:#666}.j{color:#e67}.k{color:#1c1}.l{color:#de1}.m{color:#00c}.n{color:#c244d1}.o{color:#1de7e0}.p{color:#f4f4f4}.ba{background-color:#000}.bb{background-color:#c33}.bc{background-color:#383}.bd{background-color:#bb1}.be{background-color:#009}.bf{background-color:#a04488}.bg{background-color:#1cb1b6}.bh{background-color:#ccc}.bi{background-color:#666}.bj{background-color:#e67}.bk{background-color:#1c1}.bl{background-color:#de1}.bm{background-color:#00c}.bn{background-color:#c244d1}.bo{background-color:#1de7e0}.bp{background-color:#f4f4f4}
 </style>
 <script type="text/javascript">
-	var curFrame = -1;
+	var curFrame = 0;
 	var maxFrame = 1;
 	var maxMusic = 0;
 	var fontSize = -1;
@@ -40,6 +40,7 @@ body {
 	var gi;
 	var curLang = "en";
 	var falseClick = 0;
+	var curPlayId = -1;
 
 function getXmlHttp(){
 	var xmlhttp;
@@ -114,16 +115,32 @@ function dxPlayMusic(musicId){
 	audioPlayer.setAttribute('src', 'music/' + musicId + audioType);
 	audioPlayer.load();
 	audioPlayer.play();
+	curPlayId = musicId;
+}
 
+function dxFindMusic(curFrame){
+	var playId = 0;
+	for(var ind in gi.music){
+		if(ind > curFrame) break;
+		playId = gi["music"][ind];
+	}
+	if( curPlayId != playId ) dxPlayMusic(playId);
 }
 
 
-function dxGameClick(){
+function dxGameClick(event){
+var key = event.which || event.keyCode || 0;
+/*alert(key);*/
 if( falseClick == 0 ){
 	falseClick = 1;	
 	//window.setTimeout('falseClick=0', 100);
-
-	curFrame++;
+	
+	if( key == 33 ){
+		/* PgUp */
+		curFrame--;
+		dxFindMusic(curFrame);
+	} else curFrame++;
+	if( curFrame < 0 ) curFrame = 0;
 	if( curFrame > maxFrame ){
 		curFrame = 0;
 		window.location.href = "index.html";
@@ -155,8 +172,9 @@ function dxFirstLoad(text, filename){
 	dxApplyFrame(text);
 	dxViewResize();
 	document.onclick=dxGameClick;
-	document.onkeypress=dxGameClick;
-	dxGameClick();
+	//document.onkeypress=dxGameClick;
+	document.onkeyup=dxGameClick;
+	//dxGameClick();
 }
 
 function dxInit(ans, filename){
@@ -168,22 +186,16 @@ function dxInit(ans, filename){
 	if( gi["langs"].indexOf(urlLang) > -1 ) curLang = urlLang;
 
 	var urlFrame = parseInt(window.location.hash.substr(1)) - 1;
-	if( (urlFrame > 0) && (urlFrame < maxFrame) ){
-		curFrame = urlFrame;
-
-		var playId = 0;
-		for(var ind in gi.music){
-			if(ind > curFrame) break;
-			playId = gi["music"][ind];
-		}
-		dxPlayMusic(playId);
+	if( (urlFrame > 0) && (urlFrame < maxFrame-1) ){
+		curFrame = urlFrame+1;
+		dxFindMusic(curFrame);
 	}
 
 	for(var ind in gi.music){
 		mi[ind] = gi["music"][ind]; 
 		if( mi[ind] > maxMusic ) maxMusic = mi[ind];
 	}
-	dxAjaxLoadFile(slideName("0"), dxFirstLoad);
+	dxAjaxLoadFile(slideName(curFrame), dxFirstLoad);
 	dxPreloadMusic();
 }
 
