@@ -196,8 +196,8 @@ function dxInit(ans, filename){
 		if( mi[ind] > maxMusic ) maxMusic = mi[ind];
 	}
 	dxAjaxLoadFile(slideName(curFrame), dxFirstLoad);
-	if( mi[curFrame] ) dxPlayMusic(mi[curFrame]);
 	dxPreloadMusic();
+	dxFindMusic(curFrame);
 }
 
 function firstAudioStart(){
