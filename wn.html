@@ -119,10 +119,9 @@ function dxPlayMusic(musicId){
 }
 
 function dxFindMusic(curFrame){
-	//alert(curFrame);
 	var playId = 0;
 	for(var ind in gi.music){
-		if(ind >= curFrame) break;
+		if(ind > curFrame) break;
 		playId = gi["music"][ind];
 	}
 	if( curPlayId != playId ) dxPlayMusic(playId);
