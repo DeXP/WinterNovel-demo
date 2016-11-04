@@ -86,17 +86,19 @@ a:hover {
 	}
 </style>
 <script type="text/javascript">
-	window.onload = function(){
-		var numStars=80;
+	function generateStars(){
+		var numStars = 40;
 		for(var i=0; i< numStars; i++){
 			var posx = Math.round(Math.random()*90);
 			var posy = 5+Math.round(Math.random()*90);
 			var symb = '*';
-			if( Math.random() < 0.4 ) symb = '.';
+			if( Math.random() < 0.5 ) symb = '.';
 		    var star ="<div class='star' style='left:"+posy+"%;top:"+posx+"%'>"+symb+"</div>";
 			document.body.insertAdjacentHTML( 'afterbegin', star );
 		}
 	}
+
+	window.onload = function(){ generateStars(); }
 </script>
 </head>
 <body>
@@ -648,5 +650,6 @@ a:hover {
 	</div>
 
 	<div id="bottom">Winter Novel: &nbsp;<a href="http://store.steampowered.com/app/485350">Steam</a> &nbsp;<a href="https://play.google.com/store/apps/details?id=in.dexp.winternovel_demo">Google Play</a></div>
+	<script type="text/javascript">generateStars();</script>
 </body>
 </html>
