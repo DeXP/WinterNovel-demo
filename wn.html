@@ -41,6 +41,8 @@ body {
 	var curLang = "en";
 	var falseClick = 0;
 	var curPlayId = -1;
+	var hasVoice = 0;
+	var voicedMusicVolume = 0.05;
 
 function getXmlHttp(){
 	var xmlhttp;
@@ -118,6 +120,21 @@ function dxPlayMusic(musicId){
 	curPlayId = musicId;
 }
 
+function dxPlayVoice(voiceId, nextVoiceId){
+	if( hasVoice ){
+		var audioType = '.mp3'
+		var voicePlayer = document.getElementById('dxVoice');
+		if(!!voicePlayer.canPlayType('audio/ogg') === true) audioType = '.ogg';
+		voicePlayer.setAttribute('src', 'voice/' + voiceId + audioType);
+		voicePlayer.load();
+		voicePlayer.play();
+		var preloader =document.getElementById('dxVoicePreloader');
+		preloader.setAttribute('src', 'voice/' + nextVoiceId + audioType);
+		preloader.load();
+	}
+}
+
+
 function dxFindMusic(curFrame){
 	var playId = 0;
 	for(var ind in gi.music){
@@ -150,6 +167,7 @@ if( falseClick == 0 ){
 	window.location.hash = '#'+curFrame;
 	if( preloadedId != fn ) dxAjaxLoadFile(fn, dxApplyFrame);
 		else dxApplyFrame(preloadedData, fn);
+	dxPlayVoice(curFrame, nextFrame);
 	dxAjaxLoadFile( slideName(nextFrame), dxPreloadFrame );
 	if( mi[curFrame] ) dxPlayMusic(mi[curFrame]);
 }
@@ -183,6 +201,10 @@ function dxInit(ans, filename){
 
 	var urlLang = window.location.search.substring(1, 3);
 	if( gi["langs"].indexOf(urlLang) > -1 ) curLang = urlLang;
+	if( curLang == "ru" ){
+		hasVoice = 1;
+		document.getElementById('dxAudio').volume = voicedMusicVolume;
+	}
 
 	var urlFrame = parseInt(window.location.hash.substr(1));
 	if( (urlFrame > 0) && (urlFrame < maxFrame-1) ){
@@ -222,5 +244,6 @@ window.onresize = function(){
 		<source src="music/1.mp3" type="audio/mpeg">
 		HTML5 Audio not supported
 	</audio>
+	<audio id="dxVoice"/><audio id="dxVoicePreloader" preload/>
 </body>
 </html>
