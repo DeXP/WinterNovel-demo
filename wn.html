@@ -39,10 +39,12 @@ body {
 	var mi = [];
 	var gi;
 	var curLang = "en";
-	var falseClick = 0;
+	var falseClick = false;
 	var curPlayId = -1;
-	var hasVoice = 0;
+	var hasVoice = false;
 	var voicedMusicVolume = 0.05;
+	var audioType = '.mp3';
+	var audioPlayer;
 
 function getXmlHttp(){
 	var xmlhttp;
@@ -72,7 +74,6 @@ function dxAjaxLoadFile(filename, doAfterLoad){
 }
 
 function dxApplyFrame(text, filename){
-	var lh = parseInt(fontSize) + 2;
 	var lines = text.split("\n");
 	document.getElementById('dxDisplay').innerHTML = lines[ gi.loadLine ];
 }
@@ -80,7 +81,7 @@ function dxApplyFrame(text, filename){
 function dxPreloadFrame(text, filename){
 	preloadedId = filename;
 	preloadedData = text;
-	falseClick = 0;
+	falseClick = false;
 }
 
 
@@ -111,9 +112,6 @@ function slideName(slideIndex){
 }
 
 function dxPlayMusic(musicId){
-	var audioType = '.mp3'
-	var audioPlayer = document.getElementById('dxAudio');
-	if(!!audioPlayer.canPlayType('audio/ogg') === true) audioType = '.ogg';
 	audioPlayer.setAttribute('src', 'music/' + musicId + audioType);
 	audioPlayer.load();
 	audioPlayer.play();
@@ -122,9 +120,7 @@ function dxPlayMusic(musicId){
 
 function dxPlayVoice(voiceId, nextVoiceId){
 	if( hasVoice ){
-		var audioType = '.mp3'
 		var voicePlayer = document.getElementById('dxVoice');
-		if(!!voicePlayer.canPlayType('audio/ogg') === true) audioType = '.ogg';
 		voicePlayer.setAttribute('src', 'voice/' + voiceId + audioType);
 		voicePlayer.load();
 		voicePlayer.play();
@@ -134,25 +130,33 @@ function dxPlayVoice(voiceId, nextVoiceId){
 	}
 }
 
-
 function dxFindMusic(curFrame){
 	var playId = 0;
-	for(var ind in gi.music){
+	for(var ind in mi){
 		if(ind > curFrame) break;
-		playId = gi["music"][ind];
+		playId = mi[ind];
 	}
 	if( curPlayId != playId ) dxPlayMusic(playId);
+}
+
+function dxPreloadMusic(){
+	for (var i = 1; i <= maxMusic; i++) {
+		var curPlayer = document.createElement('audio');
+		curPlayer.setAttribute('src', 'music/' + i + audioType);
+		curPlayer.setAttribute('preload', true);
+		document.body.appendChild(curPlayer);
+		curPlayer.load();
+	}
 }
 
 
 function dxGameClick(event){
 var key = event.which || event.keyCode || 0;
-if( falseClick == 0 ){
-	falseClick = 1;	
+if( !falseClick ){
+	falseClick = true;	
 	//window.setTimeout('falseClick=0', 100);
-	
 	if( key == 33 ){
-		/* PgUp */
+		/* PgUp - Rollback */
 		curFrame--;
 		dxFindMusic(curFrame);
 	} else curFrame++;
@@ -173,28 +177,20 @@ if( falseClick == 0 ){
 }
 }
 
-function dxPreloadMusic(){
-	var audioType = '.mp3'
-	var audioPlayer = document.getElementById('dxAudio');
-	if(!!audioPlayer.canPlayType('audio/ogg') === true) audioType = '.ogg' 
-	for (var i = 1; i <= maxMusic; i++) {
-		var curPlayer = document.createElement('audio');
-		curPlayer.setAttribute('src', 'music/' + i + audioType);
-		curPlayer.setAttribute('preload', true);
-		document.body.appendChild(curPlayer);
-	}
-}
 
 function dxFirstLoad(text, filename){
+	window.onresize = dxViewResize; 
 	dxApplyFrame(text);
 	dxViewResize();
 	document.onclick=dxGameClick;
-	//document.onkeypress=dxGameClick;
 	document.onkeyup=dxGameClick;
 	//dxGameClick();
 }
 
 function dxInit(ans, filename){
+	audioPlayer = document.getElementById('dxAudio');
+	if(!!audioPlayer.canPlayType('audio/ogg') === true) audioType = '.ogg';
+
 	gi = JSON.parse(ans);
 	document.title = gi.title;
 	maxFrame = parseInt(gi.totalFrames) - 1;
@@ -202,7 +198,7 @@ function dxInit(ans, filename){
 	var urlLang = window.location.search.substring(1, 3);
 	if( gi["langs"].indexOf(urlLang) > -1 ) curLang = urlLang;
 	if( curLang == "ru" ){
-		hasVoice = 1;
+		hasVoice = true;
 		document.getElementById('dxAudio').volume = voicedMusicVolume;
 	}
 
@@ -219,6 +215,7 @@ function dxInit(ans, filename){
 	dxAjaxLoadFile(slideName(curFrame), dxFirstLoad);
 	dxPreloadMusic();
 	dxFindMusic(curFrame);
+	dxPlayVoice(curFrame, curFrame);
 }
 
 function firstAudioStart(){
@@ -226,15 +223,6 @@ function firstAudioStart(){
 	var aud = document.getElementById("dxAudio");
 	aud.oncanplay = function(){};
 }
-
-/*window.onload = function(){
-	dxAjaxLoadFile("dxconfig.json", dxInit);
-}*/
-
-window.onresize = function(){
-	dxViewResize();
-}
-
 </script>
 </head>
 <body>
