@@ -27,6 +27,36 @@ body {
 	margin: auto;
 	font-family:'termnine',Monospace;font-weight:normal;letter-spacing:0px;margin:0;text-align:left;
 }
+#dxOptions {
+	position: absolute;
+	top: 50%;
+	left: 100%;
+	z-index: 999;
+	background: black;
+	text-align: left;
+	opacity: 0.2;
+	width: 14px;
+	height: 194px;
+	margin-top: -100px;
+	margin-left: -22px;
+	padding-left: 8px;
+	overflow: hidden;
+	border-radius: 15px 0px 0px 15px;
+}
+#dxOptions:hover {
+	opacity: 1;
+	margin-left: -62px;
+	width: 54px;
+}
+#musicButton:hover, #voiceButton:hover, #autoclickButton:hover {
+	text-shadow: 0px 0px 2px #444;
+}
+.oEnabled {
+	color: green;
+}
+.oDisabled {
+	color: red;
+}
 .a{color:#000}.b{color:#c33}.c{color:#383}.d{color:#bb1}.e{color:#009}.f{color:#a04488}.g{color:#1cb1b6}.h{color:#ccc}.i{color:#666}.j{color:#e67}.k{color:#1c1}.l{color:#de1}.m{color:#00c}.n{color:#c244d1}.o{color:#1de7e0}.p{color:#f4f4f4}.ba{background-color:#000}.bb{background-color:#c33}.bc{background-color:#383}.bd{background-color:#bb1}.be{background-color:#009}.bf{background-color:#a04488}.bg{background-color:#1cb1b6}.bh{background-color:#ccc}.bi{background-color:#666}.bj{background-color:#e67}.bk{background-color:#1c1}.bl{background-color:#de1}.bm{background-color:#00c}.bn{background-color:#c244d1}.bo{background-color:#1de7e0}.bp{background-color:#f4f4f4}
 </style>
 <script type="text/javascript">
@@ -40,9 +70,12 @@ body {
 	var gi;
 	var curLang = "en";
 	var falseClick = false;
+	var doPlayMusic = true;
 	var curPlayId = -1;
 	var hasVoice = false;
-	var voicedMusicVolume = 0.05;
+	var voicedMusicVolume = 0.1;
+	var voiceAutoClick = true;
+	var voicePause = 300;
 	var audioType = '.mp3';
 	var audioPlayer;
 
@@ -68,7 +101,8 @@ function dxAjaxLoadFile(filename, doAfterLoad){
 	xmlhttp.open("GET", filename, true);
 	xmlhttp.onreadystatechange=function(){
 		if (xmlhttp.readyState != 4) return;
-		doAfterLoad(xmlhttp.responseText, filename);
+		if (doAfterLoad && typeof(doAfterLoad) == "function")
+			doAfterLoad(xmlhttp.responseText, filename);
 	}
 	xmlhttp.send(null);
 }
@@ -114,8 +148,15 @@ function slideName(slideIndex){
 function dxPlayMusic(musicId){
 	audioPlayer.setAttribute('src', 'music/' + musicId + audioType);
 	audioPlayer.load();
-	audioPlayer.play();
+	if(doPlayMusic) audioPlayer.play();
 	curPlayId = musicId;
+}
+
+function dxCheckAutoclick(){
+	var voicePlayer = document.getElementById('dxVoice');
+	if(voiceAutoClick){
+		voicePlayer.onended = function(){ setTimeout("dxGameClick()", voicePause); };
+	} else voicePlayer.onended = function(){};
 }
 
 function dxPlayVoice(voiceId, nextVoiceId){
@@ -123,7 +164,7 @@ function dxPlayVoice(voiceId, nextVoiceId){
 		var voicePlayer = document.getElementById('dxVoice');
 		voicePlayer.setAttribute('src', 'voice/' + voiceId + audioType);
 		voicePlayer.load();
-		voicePlayer.play();
+		voicePlayer.play(); 
 		var preloader =document.getElementById('dxVoicePreloader');
 		preloader.setAttribute('src', 'voice/' + nextVoiceId + audioType);
 		preloader.load();
@@ -151,30 +192,32 @@ function dxPreloadMusic(){
 
 
 function dxGameClick(event){
-var key = event.which || event.keyCode || 0;
-if( !falseClick ){
-	falseClick = true;	
-	//window.setTimeout('falseClick=0', 100);
-	if( key == 33 ){
-		/* PgUp - Rollback */
-		curFrame--;
-		dxFindMusic(curFrame);
-	} else curFrame++;
-	if( curFrame < 0 ) curFrame = 0;
-	if( curFrame > maxFrame ){
-		curFrame = 0;
-		window.location.href = "index.html";
+	var key = 0;
+	if(event) key = event.which || event.keyCode || 0;
+	if( !falseClick ){
+		falseClick = true;	
+		//window.setTimeout('falseClick=0', 100);
+		if( key == 33 ){
+			/* PgUp - Rollback */
+			curFrame--;
+			dxFindMusic(curFrame);
+		} else curFrame++;
+		if( curFrame < 0 ) curFrame = 0;
+		if( curFrame > maxFrame ){
+			curFrame = 0;
+			window.location.href = "index.html";
+		}
+		nextFrame = curFrame + 1;
+		if( nextFrame > maxFrame ) nextFrame = 0;
+		var fn = slideName(curFrame);
+		window.location.hash = '#'+curFrame;
+		if( preloadedId != fn ) dxAjaxLoadFile(fn, dxApplyFrame);
+			else dxApplyFrame(preloadedData, fn);
+		dxPlayVoice(curFrame, nextFrame);
+		dxAjaxLoadFile( slideName(nextFrame), dxPreloadFrame );
+		dxAjaxLoadFile( slideName(nextFrame+0), null );
+		if( mi[curFrame] ) dxPlayMusic(mi[curFrame]);
 	}
-	nextFrame = curFrame + 1;
-	if( nextFrame > maxFrame ) nextFrame = 0;
-	var fn = slideName(curFrame);
-	window.location.hash = '#'+curFrame;
-	if( preloadedId != fn ) dxAjaxLoadFile(fn, dxApplyFrame);
-		else dxApplyFrame(preloadedData, fn);
-	dxPlayVoice(curFrame, nextFrame);
-	dxAjaxLoadFile( slideName(nextFrame), dxPreloadFrame );
-	if( mi[curFrame] ) dxPlayMusic(mi[curFrame]);
-}
 }
 
 
@@ -199,8 +242,12 @@ function dxInit(ans, filename){
 	if( gi["langs"].indexOf(urlLang) > -1 ) curLang = urlLang;
 	if( curLang == "ru" ){
 		hasVoice = true;
-		document.getElementById('dxAudio').volume = voicedMusicVolume;
+		audioPlayer.volume = voicedMusicVolume;
 	}
+	buttonState("voiceButton", hasVoice);
+	dxCheckAutoclick();
+	if(hasVoice) buttonState('autoclickButton', voiceAutoClick);
+		else buttonState('autoclickButton', false);
 
 	var urlFrame = parseInt(window.location.hash.substr(1));
 	if( (urlFrame > 0) && (urlFrame < maxFrame-1) ){
@@ -223,10 +270,78 @@ function firstAudioStart(){
 	var aud = document.getElementById("dxAudio");
 	aud.oncanplay = function(){};
 }
+
+
+/* Options */
+
+function buttonState(butName, curValue){
+	var curButton = document.getElementById(butName);
+	if( curValue ){
+		curButton.className = "oEnabled";
+	} else {
+		curButton.className = "oDisabled";
+	}
+}
+
+function invertMusic(){
+	if( doPlayMusic ){
+		audioPlayer.pause();
+	} else {
+		audioPlayer.play();
+	}
+	doPlayMusic = !doPlayMusic; 
+
+	buttonState('musicButton', doPlayMusic);
+}
+
+function invertVoice(){
+	var voicePlayer = document.getElementById('dxVoice');
+	if( hasVoice ){
+		voicePlayer.pause();
+		buttonState('autoclickButton', false);
+		audioPlayer.volume = 1;
+	} else {
+		voicePlayer.play();
+		buttonState('autoclickButton', voiceAutoClick);
+		audioPlayer.volume = voicedMusicVolume;
+	}
+	hasVoice = !hasVoice;
+
+	buttonState('voiceButton', hasVoice);
+}
+
+function invertAutoclick(){
+	if( hasVoice ){
+		voiceAutoClick = !voiceAutoClick;
+		dxCheckAutoclick();
+		buttonState('autoclickButton', voiceAutoClick);
+	} else buttonState('autoclickButton', false);
+}
+/* end Options */
 </script>
 </head>
 <body>
 	<div id="dxDisplay"><p>&nbsp; &nbsp; Loading... &nbsp; &nbsp;</p></div>
+
+	<div id="dxOptions" onclick="event.stopPropagation()">
+<div id="musicButton" class="oEnabled" title="Music" onclick="invertMusic()"><pre>
+ |\_ 
+ | _|
+ |/
+</pre></div>
+<div id="voiceButton" class="oDisabled" title="Voice" onclick="invertVoice()" style="margin-top:-0.5em"><pre>
+ ____
+/    \
+\__  /
+   \/
+</pre></div>
+<div id="autoclickButton" class="oDisabled" title="Autoclick" onclick="invertAutoclick()"><pre>
+ __|\
+|__  )
+   |/
+</pre></div>
+	</div>
+
 	<audio id="dxAudio" loop preload oncanplay="firstAudioStart()">
 		<source src="music/1.ogg" type="audio/ogg; codecs=vorbis">
 		<source src="music/1.mp3" type="audio/mpeg">
