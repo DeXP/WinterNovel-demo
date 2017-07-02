@@ -162,10 +162,14 @@ function dxCheckAutoclick(){
 function dxPlayVoice(voiceId, nextVoiceId){
 	if( hasVoice ){
 		var voicePlayer = document.getElementById('dxVoice');
+		voicePlayer.onerror = function(){ }; 
 		voicePlayer.setAttribute('src', 'voice/' + voiceId + audioType);
 		voicePlayer.load();
-		voicePlayer.play(); 
-		var preloader =document.getElementById('dxVoicePreloader');
+		var playPromise = voicePlayer.play();
+		if (playPromise !== undefined) {
+			playPromise.then(function(){ }).catch(function(error){ });
+		}
+		var preloader = document.getElementById('dxVoicePreloader');
 		preloader.setAttribute('src', 'voice/' + nextVoiceId + audioType);
 		preloader.load();
 	}
